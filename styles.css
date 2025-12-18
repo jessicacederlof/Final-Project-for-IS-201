@@ -1,0 +1,56 @@
+/*center the main heading*/
+h1{text-align: center;
+font-weight: Bold;
+}
+/*background color*/
+body {
+    background-color: rgb(251, 180, 154);
+    color: white;
+}
+.intro {
+    text-align: center;
+    font-style: oblique;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color:black
+}
+.image-center {
+    text-align: center;
+    margin: 30px 0;
+}
+.right-link {
+    text-align: right;
+    color: rgb(78, 54, 3);
+}
+.list-of-songs{
+    font-weight: bold;
+    font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif
+}
+/*for ukulele block*/
+.highlight-block {
+    background-color:rgb(240, 206, 231);
+    border:rgb(169, 27, 27);
+   color:rgb(83, 55, 55);
+
+}
+.circle-block {
+    display: inline-block;       /* shrink to fit content */
+    padding: 30px;               /* space inside the circle */
+    border: 3px dotted white;    /* dotted border */
+    border-radius: 50%;          /* makes it a circle */
+    text-align: center;          /* centers the text inside */
+    background-color: coral;     /* optional: circle color */
+    color: white;                /* text color */
+    font-family: 'Playfair Display', serif; /* or whatever font you want */
+    margin: 20px auto;           /* centers horizontally */
+}
+.dashed-border {
+    border: 2px dashed white; }
+                
+
+
+
+
+
+
+
+

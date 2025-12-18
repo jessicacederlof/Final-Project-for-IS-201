@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Replica</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            background-color: #70c5ce;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+            flex-direction: column;
+        }
+        canvas {
+            background-color: #70c5ce;
+            display: block;
+            border: 2px solid #000;
+        }
+        #startButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #ffcc00;
+            border: 2px solid #000;
+            border-radius: 8px;
+            color: #000;
+            transition: transform 0.1s;
+        }
+        #startButton:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <button id="startButton">Start Game</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+
+        const bird = {
+            x: 50,
+            y: 250,
+            width: 30,
+            height: 30,
+            gravity: 0.6,
+            lift: -10,
+            velocity: 0,
+            colorHue: 50
+        };
+
+        const pipes = [];
+        const pipeWidth = 60;
+        const pipeGap = 180;
+        let frame = 0;
+        let score = 0;
+        let gameOver = false;
+        let gameStarted = false;
+
+        // Trees
+        const trees = [];
+        const treeSpacing = 200;
+        const treeSpeed = 1;
+        for (let i = 0; i < 5; i++) {
+            trees.push({
+                x: i * treeSpacing + 100,
+                y: canvas.height - 60,
+                width: 20,
+                height: 60
+            });
+        }
+
+        // Clouds
+        const clouds = [];
+        const cloudSpeed = 0.5;
+        for (let i = 0; i < 6; i++) {
+            clouds.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * 150 + 20,
+                width: 50 + Math.random() * 30,
+                height: 30 + Math.random() * 20
+            });
+        }
+
+        function createPipe() {
+            const topHeight = Math.random() * (canvas.height - pipeGap - 80) + 40;
+            pipes.push({
+                x: canvas.width,
+                top: topHeight,
+                bottom: canvas.height - topHeight - pipeGap
+            });
+        }
+
+        // Updated drawBird function with eyes
+        function drawBird() {
+            // Draw the bird body
+            ctx.fillStyle = `hsl(${bird.colorHue}, 80%, 50%)`;
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+
+            // Draw eyes
+            const eyeRadius = 3;
+            const eyeOffsetX = 6;
+            const eyeOffsetY = 8;
+
+            // Left eye white
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(bird.x + eyeOffsetX, bird.y + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Left eye pupil
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(bird.x + eyeOffsetX, bird.y + eyeOffsetY, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Right eye white
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(bird.x + bird.width - eyeOffsetX, bird.y + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Right eye pupil
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(bird.x + bird.width - eyeOffsetX, bird.y + eyeOffsetY, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawPipes() {
+            ctx.fillStyle = "green";
+            pipes.forEach(pipe => {
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+                ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipeWidth, pipe.bottom);
+            });
+        }
+
+        function drawTrees() {
+            trees.forEach(tree => {
+                ctx.fillStyle = "#8B4513";
+                ctx.fillRect(tree.x + tree.width/4, tree.y, tree.width/2, tree.height);
+                ctx.fillStyle = "#228B22";
+                ctx.beginPath();
+                ctx.moveTo(tree.x, tree.y);
+                ctx.lineTo(tree.x + tree.width / 2, tree.y - tree.height / 2);
+                ctx.lineTo(tree.x + tree.width, tree.y);
+                ctx.closePath();
+                ctx.fill();
+            });
+        }
+
+        function updateTrees() {
+            trees.forEach(tree => {
+                tree.x -= treeSpeed;
+                if (tree.x + tree.width < 0) {
+                    tree.x = canvas.width + Math.random() * 100;
+                }
+            });
+        }
+
+        function drawClouds() {
+            clouds.forEach(cloud => {
+                ctx.fillStyle = "white";
+                ctx.beginPath();
+                ctx.ellipse(cloud.x, cloud.y, cloud.width/2, cloud.height/2, 0, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+
+        function updateClouds() {
+            clouds.forEach(cloud => {
+                cloud.x -= cloudSpeed;
+                if (cloud.x + cloud.width/2 < 0) {
+                    cloud.x = canvas.width + Math.random() * 50;
+                    cloud.y = Math.random() * 150 + 20;
+                    cloud.width = 50 + Math.random() * 30;
+                    cloud.height = 30 + Math.random() * 20;
+                }
+            });
+        }
+
+        function updateBird() {
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                gameOver = true;
+            }
+        }
+
+        function updatePipes() {
+            pipes.forEach(pipe => {
+                pipe.x -= 2;
+
+                if (
+                    bird.x + bird.width > pipe.x &&
+                    bird.x < pipe.x + pipeWidth &&
+                    (bird.y < pipe.top || bird.y + bird.height > canvas.height - pipe.bottom)
+                ) {
+                    gameOver = true;
+                }
+
+                if (pipe.x + pipeWidth === bird.x) {
+                    score++;
+                    bird.colorHue = (bird.colorHue + 30) % 360;
+                }
+            });
+
+            if (pipes.length && pipes[0].x + pipeWidth < 0) {
+                pipes.shift();
+            }
+        }
+
+        function drawScore() {
+            ctx.font = "20px 'Press Start 2P'";
+            ctx.fillStyle = "#FFD700";
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.fillText("Score: " + score, 10, 30);
+            ctx.strokeText("Score: " + score, 10, 30);
+        }
+
+        function showCountdown(seconds, callback) {
+            let counter = seconds;
+            const interval = setInterval(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                updateClouds();
+                drawClouds();
+                updateTrees();
+                drawTrees();
+                ctx.fillStyle = "#FFD700";
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 3;
+                ctx.font = "50px 'Press Start 2P'";
+                ctx.fillText(counter, canvas.width / 2 - 20, canvas.height / 2);
+                ctx.strokeText(counter, canvas.width / 2 - 20, canvas.height / 2);
+                counter--;
+                if (counter < 0) {
+                    clearInterval(interval);
+                    callback();
+                }
+            }, 1000);
+        }
+
+        function gameLoop() {
+            if (gameOver) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                updateClouds();
+                drawClouds();
+                updateTrees();
+                drawTrees();
+
+                ctx.fillStyle = "#FF0000";
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 4;
+                ctx.font = "40px 'Press Start 2P'";
+                ctx.fillText("GAME OVER", 30, canvas.height / 2);
+                ctx.strokeText("GAME OVER", 30, canvas.height / 2);
+
+                startButton.style.display = "block";
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            updateClouds();
+            drawClouds();
+
+            updateTrees();
+            drawTrees();
+
+            if (frame % 100 === 0) createPipe();
+
+            drawBird();
+            drawPipes();
+            drawScore();
+
+            updateBird();
+            updatePipes();
+
+            frame++;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            bird.y = 250;
+            bird.velocity = 0;
+            bird.colorHue = 50;
+            pipes.length = 0;
+            frame = 0;
+            score = 0;
+            gameOver = false;
+            gameStarted = true;
+            startButton.style.display = "none";
+
+            showCountdown(3, () => {
+                gameLoop();
+            });
+        }
+
+        document.addEventListener("keydown", () => {
+            if (gameStarted) bird.velocity = bird.lift;
+        });
+
+        document.addEventListener("click", () => {
+            if (gameStarted) bird.velocity = bird.lift;
+        });
+
+        startButton.addEventListener("click", startGame);
+    </script>
+<P>Check out my webiste project about music! <a href="index.html">here</a>!</p>
+
+</body>
+</html>
+
+
+
+
+
+
+
